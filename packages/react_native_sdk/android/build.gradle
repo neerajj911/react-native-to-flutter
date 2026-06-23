@@ -32,55 +32,29 @@ android {
 }
 
 // ---------------------------------------------------------------------------
-// AAR resolution
-//
-// flutter_aar/ holds a local Maven repo with the Flutter embedding AAR.
-// It must be present before the library compiles. We try, in order:
-//   1. Use it if it already exists (release tarball ships it pre-staged).
-//   2. Otherwise build it from the sibling flutter_sdk module (monorepo case).
-//   3. Otherwise fail with a helpful message.
+// Version: read from the wrapper's package.json so the AAR coordinate always
+// matches the npm package version (single source of truth).
 // ---------------------------------------------------------------------------
-def flutterAarDir = file("$projectDir/flutter_aar")
-def flutterModuleDir = file("$projectDir/../../flutter_sdk")
-def flutterBin = System.getenv('FLUTTER_BIN') ?: 'flutter'
-
-task ensureFlutterAar {
-    doLast {
-        def populated = flutterAarDir.exists() && (flutterAarDir.list()?.length ?: 0) > 0
-        if (populated) return
-
-        if (!flutterModuleDir.exists()) {
-            throw new GradleException(
-                "Flutter AAR repo missing at ${flutterAarDir} and the Flutter module " +
-                "was not found at ${flutterModuleDir}. Install rn-flutter-sdk from a " +
-                "release tarball (which ships the AAR), or place it next to flutter_sdk."
-            )
-        }
-
-        logger.lifecycle("Flutter AAR not found — building it from ${flutterModuleDir}")
-        exec {
-            workingDir flutterModuleDir
-            commandLine flutterBin, 'pub', 'get'
-        }
-        exec {
-            workingDir flutterModuleDir
-            commandLine flutterBin, 'build', 'aar', '--no-profile', '--no-debug'
-        }
-        flutterAarDir.mkdirs()
-        copy {
-            from "$flutterModuleDir/build/host/outputs/repo"
-            into flutterAarDir
-        }
-    }
+def sdkVersion = '0.0.0'
+def packageJsonFile = file("$projectDir/../package.json")
+if (packageJsonFile.exists()) {
+    def matcher = packageJsonFile.text =~ /"version"\s*:\s*"([^"]+)"/
+    if (matcher.find()) sdkVersion = matcher.group(1)
 }
-
-afterEvaluate {
-    preBuild.dependsOn ensureFlutterAar
-}
+logger.lifecycle("rn-flutter-sdk resolving Flutter AAR version ${sdkVersion}")
 
 repositories {
     google()
     mavenCentral()
+
+    // Primary: public Maven repo published by CI to the gh-pages branch.
+    // No auth required.
+    maven {
+        url 'https://neerajj911.github.io/react-native-to-flutter/maven'
+    }
+
+    // Fallback: locally staged AAR repo (for monorepo dev or release tarballs
+    // that still ship the AAR alongside, in case gh-pages is unreachable).
     maven {
         url "$projectDir/flutter_aar"
     }
@@ -90,6 +64,6 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'com.facebook.react:react-native:+'
 
-    // Flutter embedding — resolved from flutter_aar/ (auto-built above when missing).
-    implementation 'com.example.flutter_sdk:flutter_release:1.0'
+    // Flutter embedding — resolved from gh-pages first, local fallback second.
+    implementation "com.example.flutter_sdk:flutter_release:${sdkVersion}"
 }

@@ -20,8 +20,82 @@ jobs:
     needs: validate
     uses: ./.github/workflows/sdk-package.yml
 
+  # Publishes the Flutter AAR to a public Maven repo hosted on the gh-pages branch.
+  # Consumer URL: https://<user>.github.io/<repo>/maven
+  publish-maven:
+    needs: flutter
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Compute version
+        id: ver
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout gh-pages (create if missing)
+        run: |
+          git clone --branch gh-pages --depth 1 \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages || {
+              mkdir gh-pages
+              cd gh-pages
+              git init -b gh-pages
+              git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+              echo "# Maven repo" > README.md
+              echo "Auto-published by CI. Add this URL to your gradle repositories:" >> README.md
+              echo '`https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/maven`' >> README.md
+              git -c user.email=ci@github -c user.name=ci add README.md
+              git -c user.email=ci@github -c user.name=ci commit -m "init gh-pages"
+            }
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: flutter-aar
+          path: flutter-aar/
+
+      - name: Restage AAR under semver coordinates
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          SRC="flutter-aar/com/example/flutter_sdk/flutter_release/1.0"
+          DST="gh-pages/maven/com/example/flutter_sdk/flutter_release/${VERSION}"
+          mkdir -p "$DST"
+          cp -r "$SRC"/* "$DST/"
+          cd "$DST"
+          for f in flutter_release-1.0.*; do
+            mv "$f" "${f/-1.0./-${VERSION}.}"
+          done
+          # Rewrite version in the POM so downstream resolvers see the right coords.
+          sed -i "s|<version>1.0</version>|<version>${VERSION}</version>|g" "flutter_release-${VERSION}.pom"
+          # Also regenerate maven-metadata.xml so resolvers can find versions.
+          cd "../"
+          cat > maven-metadata.xml <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <metadata>
+            <groupId>com.example.flutter_sdk</groupId>
+            <artifactId>flutter_release</artifactId>
+            <versioning>
+              <latest>${VERSION}</latest>
+              <release>${VERSION}</release>
+              <versions>
+          $(for d in */; do echo "      <version>${d%/}</version>"; done)
+              </versions>
+              <lastUpdated>$(date -u +%Y%m%d%H%M%S)</lastUpdated>
+            </versioning>
+          </metadata>
+          EOF
+
+      - name: Commit and push to gh-pages
+        working-directory: gh-pages
+        run: |
+          git -c user.email=ci@github -c user.name=ci add -A
+          if ! git diff --cached --quiet; then
+            git -c user.email=ci@github -c user.name=ci commit -m "Publish flutter_release ${{ steps.ver.outputs.version }}"
+            git push origin gh-pages
+          else
+            echo "No changes to publish"
+          fi
+
   release:
-    needs: [flutter, rn]
+    needs: [flutter, rn, publish-maven]
     runs-on: ubuntu-latest
     permissions:
       contents: write
