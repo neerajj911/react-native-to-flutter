@@ -1,0 +1,7 @@
+rootProject.name = 'Example'
+apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')
+
+include ':rn-flutter-sdk'
+project(':rn-flutter-sdk').projectDir = new File(rootProject.projectDir, '../../packages/react_native_sdk/android')

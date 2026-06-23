@@ -10,5 +10,22 @@
     "react": "18.2.0",
     "react-native": "0.74.0",
     "rn-flutter-sdk": "file:../packages/react_native_sdk"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "@babel/preset-env": "^7.20.0",
+    "@babel/runtime": "^7.20.0",
+    "@react-native/babel-preset": "0.74.0",
+    "@react-native/metro-config": "0.74.0",
+    "@react-native/typescript-config": "0.74.0",
+    "@react-native-community/cli": "13.6.6",
+    "@react-native-community/cli-platform-android": "13.6.6",
+    "@types/react": "^18.2.6",
+    "babel-jest": "^29.6.3",
+    "react-test-renderer": "18.2.0",
+    "typescript": "5.0.4"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

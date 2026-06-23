@@ -77,13 +77,38 @@ This kills the race where Android could push data before Dart was listening.
 
 Without caching, every `open()` starts a fresh `FlutterEngine` (~300–800ms cold start). We cache it once in `FlutterEngineCache` under the id `"sdk_engine"`. The first `open()` pays the cost; every later `open()` is instant.
 
-## Local build
+## First-time setup
+
+The repo ships only hand-written source. Run the bootstrap once to generate the platform skeletons (`flutter create --template module` and `npx react-native init`), patch the example app's gradle + `MainApplication`, and do a first build:
 
 ```bash
-./scripts/build-local.sh
+./scripts/bootstrap.sh
 ```
 
-Runs `flutter build aar`, copies the repo into `packages/react_native_sdk/android/flutter_aar/`, then `npm install && npm run build` on the wrapper. After that, `example/` resolves the wrapper via `file:../packages/react_native_sdk` and you can `cd example && npm install && npm run android`.
+It's idempotent — re-running skips steps that are already done.
+
+## Local build (after bootstrap)
+
+```bash
+./scripts/build-local.sh    # rebuild AAR + wrapper after SDK changes
+cd example && npm run android
+```
+
+`build-local.sh` runs `flutter build aar`, copies the repo into `packages/react_native_sdk/android/flutter_aar/`, then `npm install && npm run build` on the wrapper.
+
+## How the AAR gets to consumers (not just locally)
+
+The wrapper's gradle file ([android/build.gradle](packages/react_native_sdk/android/build.gradle)) has an `ensureFlutterAar` task that runs before `preBuild`. It resolves the AAR in this order:
+
+1. **Already staged** — `android/flutter_aar/` is populated. No-op. (This is what release-tarball consumers see.)
+2. **Sibling module present** — runs `flutter build aar` in `../../flutter_sdk` and copies the output. (This is the monorepo dev case, or anyone who installs the wrapper next to the flutter module.)
+3. **Neither** — fails with a clear error.
+
+The release workflow stages step 1 into the published tarball, so end users never hit step 2 unless they want to.
+
+## Troubleshooting
+
+**`Unable to establish loopback connection` during `flutter build aar` on Windows** — known Gradle 8.14 + Windows + JDK issue (`UnixDomainSockets.connect0` fails). Workarounds: add an antivirus exclusion for the project + `~/.gradle`, or pin Gradle down in `packages/flutter_sdk/.android/gradle/wrapper/gradle-wrapper.properties` (`gradle-8.7-all.zip`). CI (Linux) is unaffected.
 
 ## GitHub Actions
 
