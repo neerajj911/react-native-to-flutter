@@ -1,0 +1,27 @@
+{
+  "name": "rn-flutter-sdk",
+  "version": "1.0.0",
+  "description": "React Native SDK that opens an embedded Flutter screen.",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "src",
+    "android",
+    "rn-flutter-sdk.podspec",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "tsc"
+  },
+  "keywords": ["react-native", "flutter", "sdk"],
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/react-native": "^0.72.0"
+  }
+}

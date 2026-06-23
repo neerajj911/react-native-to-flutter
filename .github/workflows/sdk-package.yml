@@ -1,0 +1,33 @@
+name: RN SDK package
+
+on:
+  push:
+    tags: ['v*']
+  workflow_call:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install
+        working-directory: packages/react_native_sdk
+        run: npm install
+
+      - name: Build
+        working-directory: packages/react_native_sdk
+        run: npm run build
+
+      - name: Upload JS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: rn-sdk-build
+          path: |
+            packages/react_native_sdk/lib/
+            packages/react_native_sdk/package.json
+            packages/react_native_sdk/android/

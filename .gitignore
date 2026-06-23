@@ -1,0 +1,11 @@
+node_modules/
+lib/
+build/
+.dart_tool/
+.idea/
+.vscode/
+.gradle/
+packages/flutter_sdk/build/
+packages/react_native_sdk/android/flutter_aar/
+packages/react_native_sdk/lib/
+*.log

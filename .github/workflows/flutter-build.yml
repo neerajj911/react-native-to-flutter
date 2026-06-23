@@ -1,0 +1,35 @@
+name: Flutter AAR build
+
+on:
+  push:
+    tags: ['v*']
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: flutter pub get
+        working-directory: packages/flutter_sdk
+        run: flutter pub get
+
+      - name: flutter build aar
+        working-directory: packages/flutter_sdk
+        run: flutter build aar --no-profile --no-debug
+
+      - name: Upload AAR repo artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-aar
+          path: packages/flutter_sdk/build/host/outputs/repo/

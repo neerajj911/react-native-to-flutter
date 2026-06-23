@@ -1,0 +1,18 @@
+name: flutter_sdk
+description: Embedded Flutter module shown by the RN SDK.
+version: 1.0.0
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  module:
+    androidX: true
+    androidPackage: com.example.flutter_sdk
+    iosBundleIdentifier: com.example.flutterSdk

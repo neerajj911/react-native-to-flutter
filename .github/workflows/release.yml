@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate tag matches package.json + pubspec.yaml
+        run: bash scripts/check-versions.sh "$GITHUB_REF_NAME"
+
+  flutter:
+    needs: validate
+    uses: ./.github/workflows/flutter-build.yml
+
+  rn:
+    needs: validate
+    uses: ./.github/workflows/sdk-package.yml
+
+  release:
+    needs: [flutter, rn]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Flutter AAR
+        uses: actions/download-artifact@v4
+        with:
+          name: flutter-aar
+          path: aar/
+
+      - name: Download RN build
+        uses: actions/download-artifact@v4
+        with:
+          name: rn-sdk-build
+          path: rn/
+
+      - name: Stage AAR into RN wrapper
+        run: |
+          mkdir -p rn/android/flutter_aar
+          cp -R aar/. rn/android/flutter_aar/
+
+      - name: Pack tarball
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          tar -czf "rn-flutter-sdk-${VERSION}.tgz" -C rn .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          files: rn-flutter-sdk-*.tgz
