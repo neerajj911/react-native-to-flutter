@@ -11,8 +11,8 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   static const _channel = MethodChannel('sdk_channel');
 
-  String _userName = '';
-  String _userId = '';
+  String _name = '';
+  String _email = '';
 
   @override
   void initState() {
@@ -21,28 +21,206 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (call.method == 'setUser') {
         final args = Map<String, dynamic>.from(call.arguments as Map);
         setState(() {
-          _userName = args['userName']?.toString() ?? '';
-          _userId = args['userId']?.toString() ?? '';
+          _name = (args['name'] ?? args['userName'] ?? '').toString();
+          _email = (args['email'] ?? args['userId'] ?? '').toString();
         });
       }
     });
     _channel.invokeMethod('ready');
   }
 
+  static const _messages = <_Msg>[
+    _Msg('Welcome to Live Support', false),
+    _Msg('Hi there! How can I help today?', false),
+    _Msg('I have a question about my account.', true),
+    _Msg('Of course — happy to help. What\'s up?', false),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final initial = _name.isNotEmpty ? _name[0].toUpperCase() : '?';
     return Scaffold(
-      appBar: AppBar(title: const Text('Flutter Screen')),
-      body: Center(
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Hello $_userName', style: const TextStyle(fontSize: 22)),
-            const SizedBox(height: 8),
-            Text('User ID: $_userId', style: const TextStyle(fontSize: 16)),
+            _header(initial),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _messages.length,
+                itemBuilder: (_, i) => _bubble(_messages[i]),
+              ),
+            ),
+            _composer(),
           ],
         ),
       ),
     );
   }
+
+  Widget _header(String initial) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF3182CE),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(8, 8, 16, 16),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => SystemNavigator.pop(),
+          ),
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: Colors.white,
+            child: Text(
+              initial,
+              style: const TextStyle(
+                color: Color(0xFF3182CE),
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _name.isEmpty ? 'Guest' : _name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  _email,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 10,
+            height: 10,
+            decoration: const BoxDecoration(
+              color: Color(0xFF48BB78),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          const Text('Online',
+              style: TextStyle(color: Colors.white70, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Widget _bubble(_Msg m) {
+    final isMine = m.fromMe;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment:
+            isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isMine)
+            const CircleAvatar(
+              radius: 14,
+              backgroundColor: Color(0xFF3182CE),
+              child: Text('A',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
+            ),
+          if (!isMine) const SizedBox(width: 8),
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.72,
+              ),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: isMine ? const Color(0xFF3182CE) : Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(14),
+                  topRight: const Radius.circular(14),
+                  bottomLeft: Radius.circular(isMine ? 14 : 4),
+                  bottomRight: Radius.circular(isMine ? 4 : 14),
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 2,
+                      offset: Offset(0, 1)),
+                ],
+              ),
+              child: Text(
+                m.text,
+                style: TextStyle(
+                  fontSize: 14,
+                  color:
+                      isMine ? Colors.white : const Color(0xFF1A202C),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _composer() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black12, blurRadius: 4, offset: Offset(0, -1)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F2F5),
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: const Text(
+                'Type a message…',
+                style: TextStyle(color: Color(0xFFA0AEC0)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF3182CE),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.send, color: Colors.white, size: 20),
+              onPressed: () {},
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Msg {
+  final String text;
+  final bool fromMe;
+  const _Msg(this.text, this.fromMe);
 }
