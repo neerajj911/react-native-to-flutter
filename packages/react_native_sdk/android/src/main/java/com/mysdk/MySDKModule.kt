@@ -5,6 +5,7 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.ReadableMap
+import com.facebook.react.bridge.UiThreadUtil
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.dart.DartExecutor
@@ -18,16 +19,21 @@ class MySDKModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun open(data: ReadableMap) {
-        ensureEngine()
-        val intent = Intent(reactContext, FlutterScreenActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            val keys = data.keySetIterator()
-            while (keys.hasNextKey()) {
-                val k = keys.nextKey()
-                putExtra(k, data.getString(k))
-            }
+        val extras = HashMap<String, String>()
+        val keys = data.keySetIterator()
+        while (keys.hasNextKey()) {
+            val k = keys.nextKey()
+            data.getString(k)?.let { extras[k] = it }
         }
-        reactContext.startActivity(intent)
+
+        UiThreadUtil.runOnUiThread {
+            ensureEngine()
+            val intent = Intent(reactContext, FlutterScreenActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                extras.forEach { (k, v) -> putExtra(k, v) }
+            }
+            reactContext.startActivity(intent)
+        }
     }
 
     private fun ensureEngine() {
