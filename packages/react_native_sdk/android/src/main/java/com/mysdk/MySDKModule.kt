@@ -14,6 +14,8 @@ class MySDKModule(private val reactContext: ReactApplicationContext) :
 
     override fun getName() = "MySDKModule"
 
+    override fun canOverrideExistingModule() = true
+
     @ReactMethod
     fun open(data: ReadableMap) {
         ensureEngine()
