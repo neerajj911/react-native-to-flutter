@@ -19,14 +19,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'setUser') {
-        final args = Map<String, dynamic>.from(call.arguments as Map);
-        setState(() {
-          _name = (args['name'] ?? args['userName'] ?? '').toString();
-          _email = (args['email'] ?? args['userId'] ?? '').toString();
-        });
+        _applyArgs(call.arguments);
       }
     });
-    _channel.invokeMethod('ready');
+    _pullParams();
+  }
+
+  Future<void> _pullParams() async {
+    try {
+      final result = await _channel.invokeMethod<dynamic>('getParams');
+      _applyArgs(result);
+    } catch (_) {
+      // ignore — native side may not have responded yet
+    }
+  }
+
+  void _applyArgs(dynamic raw) {
+    if (raw is! Map) return;
+    final args = Map<String, dynamic>.from(raw);
+    if (!mounted) return;
+    setState(() {
+      _name = (args['name'] ?? args['userName'] ?? '').toString();
+      _email = (args['email'] ?? args['userId'] ?? '').toString();
+    });
   }
 
   static const _messages = <_Msg>[

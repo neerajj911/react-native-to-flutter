@@ -19,17 +19,20 @@ class FlutterScreenActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
 
         val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
-        val payload = mutableMapOf<String, String>()
+
+        val payload = HashMap<String, String>()
         intent.extras?.keySet()?.forEach { k ->
             intent.getStringExtra(k)?.let { payload[k] = it }
         }
 
         channel.setMethodCallHandler { call, result ->
-            if (call.method == "ready") {
-                channel.invokeMethod("setUser", payload)
-                result.success(null)
-            } else {
-                result.notImplemented()
+            when (call.method) {
+                "getParams" -> result.success(payload)
+                "ready" -> {
+                    channel.invokeMethod("setUser", payload)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
             }
         }
     }
