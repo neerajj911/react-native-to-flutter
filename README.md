@@ -167,4 +167,16 @@ The `open()` payload is an object, so extra keys (`theme`, `language`, …) can 
    }
    ```
 2. **Register the package** — add `MySDKPackage()` to your `ReactNativeHost.getPackages()` in `MainApplication.kt`.
-3. **Ensure `minSdkVersion >= 21`** in `android/build.gradle`.
+3. **Bump SDK versions in `android/build.gradle`** to match Flutter's requirements:
+   ```gradle
+   ext {
+       minSdkVersion = 24      // Flutter requires >= 24
+       compileSdkVersion = 36  // Flutter 3.38+ requires >= 36
+       targetSdkVersion = 36
+   }
+   ```
+4. **Suppress the AGP compileSdk warning** by adding this to `android/gradle.properties`:
+   ```properties
+   android.suppressUnsupportedCompileSdk=36
+   ```
+   (RN 0.74 ships AGP 8.2.1, which warns about compileSdk > 34 but compiles fine.)
