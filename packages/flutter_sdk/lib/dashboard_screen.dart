@@ -45,6 +45,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           children: [
             _header(initial),
+            _paramsBanner(),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
@@ -56,6 +57,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _paramsBanner() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFCBD5E0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF02569B),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'FLUTTER SCREEN',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Params received from RN',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF718096),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _paramRow('name',  _name.isEmpty ? '(empty)'  : _name),
+          const SizedBox(height: 4),
+          _paramRow('email', _email.isEmpty ? '(empty)' : _email),
+        ],
+      ),
+    );
+  }
+
+  Widget _paramRow(String key, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 56,
+          child: Text(
+            '$key:',
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 12,
+              color: Color(0xFF718096),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 13,
+              color: Color(0xFF1A202C),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
