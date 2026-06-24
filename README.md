@@ -153,4 +153,18 @@ The `open()` payload is an object, so extra keys (`theme`, `language`, …) can 
 
 ### One-time Android host setup
 
-Add `MySDKPackage()` to your `ReactNativeHost.getPackages()` and make sure `minSdkVersion >= 21`.
+1. **Add two Maven repos** to your app's `android/build.gradle` `allprojects.repositories` block:
+   ```gradle
+   allprojects {
+       repositories {
+           google()
+           mavenCentral()
+           // Flutter engine binaries (Google-hosted, required because the AAR has transitive deps on them)
+           maven { url 'https://storage.googleapis.com/download.flutter.io' }
+           // Our wrapper's AAR
+           maven { url 'https://neerajj911.github.io/react-native-to-flutter/maven' }
+       }
+   }
+   ```
+2. **Register the package** — add `MySDKPackage()` to your `ReactNativeHost.getPackages()` in `MainApplication.kt`.
+3. **Ensure `minSdkVersion >= 21`** in `android/build.gradle`.

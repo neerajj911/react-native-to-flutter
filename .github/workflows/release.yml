@@ -28,6 +28,8 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
       - name: Compute version
         id: ver
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
@@ -57,16 +59,10 @@ jobs:
           VERSION="${{ steps.ver.outputs.version }}"
           SRC="flutter-aar/com/example/flutter_sdk/flutter_release/1.0"
           DST="gh-pages/maven/com/example/flutter_sdk/flutter_release/${VERSION}"
-          mkdir -p "$DST"
-          cp -r "$SRC"/* "$DST/"
-          cd "$DST"
-          for f in flutter_release-1.0.*; do
-            mv "$f" "${f/-1.0./-${VERSION}.}"
-          done
-          # Rewrite version in the POM so downstream resolvers see the right coords.
-          sed -i "s|<version>1.0</version>|<version>${VERSION}</version>|g" "flutter_release-${VERSION}.pom"
-          # Also regenerate maven-metadata.xml so resolvers can find versions.
-          cd "../"
+          bash scripts/restage-aar.sh "$SRC" "$DST" "$VERSION"
+
+          # Regenerate maven-metadata.xml at the artifact root.
+          cd "gh-pages/maven/com/example/flutter_sdk/flutter_release"
           cat > maven-metadata.xml <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <metadata>
@@ -114,10 +110,12 @@ jobs:
           name: rn-sdk-build
           path: rn/
 
-      - name: Stage AAR into RN wrapper
+      - name: Stage AAR into RN wrapper under semver coordinates
         run: |
-          mkdir -p rn/android/flutter_aar
-          cp -R aar/. rn/android/flutter_aar/
+          VERSION="${GITHUB_REF_NAME#v}"
+          SRC="aar/com/example/flutter_sdk/flutter_release/1.0"
+          DST="rn/android/flutter_aar/com/example/flutter_sdk/flutter_release/${VERSION}"
+          bash scripts/restage-aar.sh "$SRC" "$DST" "$VERSION"
 
       - name: Pack tarball
         run: |

@@ -47,14 +47,18 @@ repositories {
     google()
     mavenCentral()
 
+    // Flutter engine binaries (flutter_embedding_release, arm64_v8a_release, etc.)
+    // are hosted here by Google. Required because our AAR has transitive deps on them.
+    maven {
+        url 'https://storage.googleapis.com/download.flutter.io'
+    }
+
     // Primary: public Maven repo published by CI to the gh-pages branch.
-    // No auth required.
     maven {
         url 'https://neerajj911.github.io/react-native-to-flutter/maven'
     }
 
-    // Fallback: locally staged AAR repo (for monorepo dev or release tarballs
-    // that still ship the AAR alongside, in case gh-pages is unreachable).
+    // Fallback: locally staged AAR repo (for monorepo dev).
     maven {
         url "$projectDir/flutter_aar"
     }
