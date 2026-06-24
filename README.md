@@ -166,7 +166,7 @@ The `open()` payload is an object, so extra keys (`theme`, `language`, …) can 
        }
    }
    ```
-2. **Register the package** — add `MySDKPackage()` to your `ReactNativeHost.getPackages()` in `MainApplication.kt`.
+2. **Package registration is automatic** via RN autolinking (RN 0.60+). Do **not** add `MySDKPackage()` to `getPackages()` manually — that causes a "tried to override MySDKModule" runtime error.
 3. **Bump SDK versions in `android/build.gradle`** to match Flutter's requirements:
    ```gradle
    ext {
